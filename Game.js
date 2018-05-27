@@ -3,6 +3,7 @@ BunnyDefender.Game = function(game) {
     this.bunnyGroup;
     this.totalSpacerocks;
     this.spacerockgroup;
+    this.burst;
 };
 
 BunnyDefender.Game.prototype = {
@@ -10,6 +11,7 @@ BunnyDefender.Game.prototype = {
         this.totalBunnies = 20;
         this.totalSpacerocks = 13;
         this.buildWorld();
+        this.buildEmitter();
     },
 
     buildWorld: function() {
@@ -84,5 +86,43 @@ BunnyDefender.Game.prototype = {
         r.body.velocity.y = this.rnd.integerInRange(200, 400);
     },
 
-    update: function() {}
+    buildEmitter: function () {
+        this.burst = this.add.emitter(0, 0, 80);
+        this.burst.minParticleScale = 0.3;
+        this.burst.maxParticleScale = 1.2;
+        this.burst.minParticleSpeed.setTo(-30, 30);
+        this.burst.maxParticleSpeed.setTo(30, -30);
+        this.burst.makeParticles('explosion');
+        this.input.onDown.add(this.fireBurst, this);
+    },
+
+    fireBurst: function (pointer) {
+        this.burst.emitX = pointer.x;
+        this.burst.emitY = pointer.y;
+        this.burst.start(true, 2000, null, 20); //(explode, lifespan, frequency, quantity)
+    },
+
+    burstCollision: function(r, b) {
+        this.respawnRock(r);
+    },
+
+    bunnyCollision: function(r, b) {
+        if(b.exists) {
+            this.respawnRock(r);
+            b.kill();
+            this.totalBunnies--;
+            this.checkBunniesLeft();
+        }
+    },
+
+    checkBunniesLeft: function() {
+        if(this.totalBunnies <= 0) {
+            //game over
+        }
+    },
+
+    update: function() {
+        this.physics.arcade.overlap(this.spacerockgroup, this.burst, this.burstCollision, null, this);
+        this.physics.arcade.overlap(this.spacerockgroup, this.bunnygroup, this.bunnyCollision, null, this);
+    }
 };
